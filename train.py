@@ -7,7 +7,7 @@ import random
 import torch
 import gymnasium as gym
 from algos.ppo.agent import Agent
-from utils.env import make_env
+from env import make_env
 import yaml
 from algos.ppo import ppo
 
@@ -75,10 +75,10 @@ if __name__ == "__main__":
     )
     # assert isinstance(envs.single_action_space, gym.spaces.Discrete), "only descrete action space is supported"
 
-    print(envs.single_action_space.shape)
-    print(envs.observation_space)
+    # print(envs.single_action_space.shape)
+    # print(envs.observation_space)
 
-    agent = Agent(envs, input_size=(250, 160)).to(device)
+    agent = Agent(envs, input_size=(128, 64)).to(device)
 
     if(args.algorithm == 'ppo'):
         trained_agent = ppo(envs, agent, config_, device, writer)

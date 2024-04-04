@@ -10,7 +10,7 @@ class Agent(nn.Module):
         super(Agent, self).__init__()
         self.envs = envs
         self.conv = nn.Sequential(
-            nn.Conv2d(3, 16, kernel_size=2, stride=1, padding=1),
+            nn.Conv2d(4, 16, kernel_size=2, stride=1, padding=1),
             nn.ReLU(),
             nn.Conv2d(16, 32, kernel_size=2, stride=1, padding=1),
             nn.ReLU(),
@@ -38,11 +38,11 @@ class Agent(nn.Module):
         )
     
     def get_value(self, x):
-        x = self.conv(x.permute(0, 3, 1, 2))
+        x = self.conv(x) # self.conv(x.permute(0, 3, 1, 2))
         return self.critic(x)
     
     def get_action_and_value(self, x, epsilon, action=None):
-        x = self.conv(x.permute(0, 3, 1, 2))
+        x = self.conv(x) # self.conv(x.permute(0, 3, 1, 2))
         logits = self.actor(x)
         probs = Categorical(logits=logits)
         if np.random.rand() < epsilon:

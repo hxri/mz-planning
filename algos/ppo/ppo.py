@@ -3,6 +3,7 @@ import time
 import numpy as np
 import torch.nn as nn
 import torch.optim as optim
+from .advantage_estimate import advantage_estimate
 
 def ppo(envs, agent, config, device, writer):
     batch_size = int(config['num_envs'] * config['num_steps'])
@@ -26,7 +27,7 @@ def ppo(envs, agent, config, device, writer):
     next_done = torch.zeros(config['num_envs']).to(device)
     num_updates = config['total_timesteps'] // batch_size
 
-    print(next_obs)
+    # print(next_obs)
 
     # Start the PPO updation process
     for update in range(1, num_updates + 1):
@@ -60,7 +61,7 @@ def ppo(envs, agent, config, device, writer):
             # print(np.average(reward))
 
             rewards[step] = torch.tensor(reward).to(device).view(-1)
-            next_obs, next_done = torch.Tensor(next_obs['image']).to(device), torch.Tensor(terminated).to(device)
+            next_obs, next_done = torch.Tensor(next_obs).to(device), torch.Tensor(terminated).to(device)
 
             # print(info)
             if('final_info' in info):
@@ -80,34 +81,9 @@ def ppo(envs, agent, config, device, writer):
         with torch.no_grad():
             next_value = agent.get_value(next_obs).reshape(1, -1)
 
-            # Estimate advantages with or without GAE
-            if config['gae']:
-                advantages = torch.zeros_like(rewards).to(device)
-                lastgaelam = 0
-                for t in reversed(range(config['num_steps'])):
-                    if t == config['num_steps'] -1:
-                        nextnonterminal = 1.0 - next_done
-                        nextvalues = next_value
-                    else:
-                        nextnonterminal = 1.0 - dones[t+1]
-                        nextvalues = values[t+1]
-                    delta = rewards[t] + config['gamma'] * nextvalues * nextnonterminal - values[t]
-                    advantages[t] = lastgaelam = delta + config['gamma'] * config['gae_lambda'] * nextnonterminal * lastgaelam
-                returns = advantages + values
-            else:
-                returns = torch.zeros_like(rewards).to(device)
-                for t in reversed(range(config['num_steps'])):
-                    if t == config['num_steps'] -1:
-                        nextnonterminal = 1.0 - next_done
-                        nextvalues = next_value
-                    else:
-                        nextnonterminal = 1.0 - dones[t+1]
-                        next_return = returns[t+1]
-                    returns[t] = rewards[t] + config['gamma'] * nextnonterminal * next_return
-                advantages = returns - values
-
+            advantages, returns = advantage_estimate(config, rewards, device, next_done, next_value, values, dones)
         # Flatten the batch
-        b_obs = obs.reshape((-1,) + envs.single_observation_space['image'].shape)
+        b_obs = obs.reshape((-1,) + envs.single_observation_space.shape)
         b_logprobs = logprobs.reshape(-1)
         b_actions = actions.reshape(-1)
         b_advantages = advantages.reshape(-1)

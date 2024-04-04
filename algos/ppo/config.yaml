@@ -1,5 +1,5 @@
 exp_name: 'random-experiment' # Name of Experiment
-gym_id: 'Adventure-v0' # ID of Gym Environment
+gym_id: 'highway-v0' # ID of Gym Environment
 learning_rate: 0.001 # Learning rate for the optimizer
 seed: 1 # Seed for the experiment
 total_timesteps: 50000 # Total number of timesteps
@@ -9,7 +9,7 @@ cuda: True # Enable or disable cuda
 
 track: False # use wandb
 wandb_project_name: 'mz-planning'
-wandb_entity: None
+wandb_entity: null
 capture_video: False # capture video of the env during experiment
 
 initial_epsilon: 0.99
@@ -29,5 +29,5 @@ clip_vloss: True # Toggle the use of clipped value loss
 ent_coef: 0.01 # The coefficient of entropy
 vf_coef: 0.5 # The coefficient of value function
 max_grad_norm: 0.5 # The maximum norm for gradient clipping
-target_kl: None # The target KL divergence threshold
-early_stop: none # The global step at which to stop the training
+target_kl: null # The target KL divergence threshold
+early_stop: null # The global step at which to stop the training
