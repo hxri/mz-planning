@@ -11,8 +11,10 @@ def ppo(envs, agent, config, device, writer):
 
     optimizer = optim.Adam(agent.parameters(), lr=config['learning_rate'], eps=1e-5)
 
+    # print(envs.observation_space['rgb'].shape)
+
     # intitalize zero tensors for s, a, log_prob, r, t, v
-    obs = torch.zeros((config['num_steps'], config['num_envs']) + envs.single_observation_space.shape).to(device)
+    obs = torch.zeros((config['num_steps'], config['num_envs']) + envs.observation_space['rgb'].shape).to(device)
     actions = torch.zeros((config['num_steps'], config['num_envs'])).to(device)
     logprobs = torch.zeros((config['num_steps'], config['num_envs'])).to(device)
     rewards = torch.zeros((config['num_steps'], config['num_envs'])).to(device)
@@ -23,7 +25,7 @@ def ppo(envs, agent, config, device, writer):
     start_time = time.time()
 
     # Reset the envs and get an observation
-    next_obs = torch.Tensor(envs.reset()[0]).to(device)
+    next_obs = torch.Tensor(envs.reset()[0]['rgb']).to(device)
     next_done = torch.zeros(config['num_envs']).to(device)
     num_updates = config['total_timesteps'] // batch_size
 
@@ -31,7 +33,6 @@ def ppo(envs, agent, config, device, writer):
 
     # Start the PPO updation process
     for update in range(1, num_updates + 1):
-        
         # Early stop for testing purposes or limiting the training process
         if(config['early_stop'] is not None and global_step > config['early_stop']):
             break
@@ -56,12 +57,15 @@ def ppo(envs, agent, config, device, writer):
                 values[step] = value.flatten()
             actions[step] = action
             logprobs[step] = logprob
+            # state = envs.reset(seed=0)
 
             next_obs, reward, terminated, truncated, info = envs.step(action.cpu().numpy())
-            # print(np.average(reward))
+            # print(truncated)
+            if(terminated):
+                state = envs.reset(seed=0)
 
             rewards[step] = torch.tensor(reward).to(device).view(-1)
-            next_obs, next_done = torch.Tensor(next_obs).to(device), torch.Tensor(terminated).to(device)
+            next_obs, next_done = torch.Tensor(next_obs['rgb']).to(device), torch.Tensor([terminated]).to(device)
 
             # print(info)
             if('final_info' in info):
@@ -83,7 +87,7 @@ def ppo(envs, agent, config, device, writer):
 
             advantages, returns = advantage_estimate(config, rewards, device, next_done, next_value, values, dones)
         # Flatten the batch
-        b_obs = obs.reshape((-1,) + envs.single_observation_space.shape)
+        b_obs = obs.reshape((-1,) + envs.observation_space['rgb'].shape)
         b_logprobs = logprobs.reshape(-1)
         b_actions = actions.reshape(-1)
         b_advantages = advantages.reshape(-1)
@@ -162,4 +166,4 @@ def ppo(envs, agent, config, device, writer):
         print("SPS: ", int(global_step / (time.time() - start_time)))
         writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
 
-    return agent
+    return agent, envs

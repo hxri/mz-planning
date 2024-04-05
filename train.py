@@ -6,38 +6,23 @@ import numpy as np
 import random
 import torch
 import gymnasium as gym
-from algos.ppo.agent import Agent
+from .algos.ppo.agent import Agent
 from env import make_env
 import yaml
-from algos.ppo import ppo
+from .algos.ppo.ppo import ppo
 
 
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--config', 
-                        type=str, 
-                        default=os.path.basename(__file__).rstrip('.yaml'), 
-                        help='path to config file')
-    parser.add_argument('--algorithm', 
-                        type=str, 
-                        default='ppo', 
-                        help='Which algorithm to use')
-    
-    args = parser.parse_args()
-    return args
+def train_agent(envs, agent):
+    # state = envs.reset(seed=0)
+    # get the current working directory
+    current_working_directory = os.getcwd()
 
-
-
-if __name__ == "__main__":
-    args = parse_args()
-
-    with open(args.config, "r") as f:
+    # print output to the console
+    # print(current_working_directory)
+    with open('train/planner/algos/ppo/config.yaml', "r") as f:
         config_ = yaml.safe_load(f)
     # run_name = f"{config_['gym_id}__{config_['exp_name}__{config_['seed}__{int(time.time())}"
     run_name = f"{config_['gym_id']}__{config_['exp_name']}"
-
-    # print(config_)
-    print(args)
 
     # Weights and Biases
     if config_['track']:
@@ -69,19 +54,18 @@ if __name__ == "__main__":
 
     device = torch.device("cuda" if torch.cuda.is_available() and config_['cuda'] else "cpu")
     
-    # Env setup
-    envs = gym.vector.SyncVectorEnv(
-        [make_env(config_['gym_id'], config_['seed'] + i, i, config_['capture_video'], run_name) for i in range(config_['num_envs'])]
-    )
+    # # Env setup
+    # envs = gym.vector.SyncVectorEnv(
+    #     [make_env(config_['gym_id'], config_['seed'] + i, i, config_['capture_video'], run_name) for i in range(config_['num_envs'])]
+    # )
     # assert isinstance(envs.single_action_space, gym.spaces.Discrete), "only descrete action space is supported"
 
     # print(envs.single_action_space.shape)
     # print(envs.observation_space)
 
-    agent = Agent(envs, input_size=(128, 64)).to(device)
+    # agent = Agent(envs, input_size=(130, 100)).to(device)
 
-    if(args.algorithm == 'ppo'):
-        trained_agent = ppo(envs, agent, config_, device, writer)
+    trained_agent, envs = ppo(envs, agent, config_, device, writer)
 
     envs.close()
     writer.close()

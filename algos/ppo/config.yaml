@@ -15,14 +15,14 @@ capture_video: False # capture video of the env during experiment
 initial_epsilon: 0.99
 decay_parameter: 0.99
 
-num_envs: 4 # Number of parallel gym envs
-num_steps: 128 # Number of steps to run each environment per policy rollout
+num_envs: 1 # Number of parallel gym envs
+num_steps: 1024 # Number of steps to run each environment per policy rollout
 anneal_lr: True # Enable learning rate annealing
 gae: True # Toggele general advantage estimation
 gamma: 0.99 # Discount factor
 gae_lambda: 0.95 # lambda for GAE
-num_minibatches: 4 # Number of mini-batches
-update_epochs: 4 # The k epochs to update policy
+num_minibatches: 512 # Number of mini-batches
+update_epochs: 20 # The k epochs to update policy
 norm_adv: True # Toggle advantage normalization
 clip_coef: 0.2 # The surrogate clipping coefficient
 clip_vloss: True # Toggle the use of clipped value loss
